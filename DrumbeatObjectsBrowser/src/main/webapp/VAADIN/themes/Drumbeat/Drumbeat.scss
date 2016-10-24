@@ -1,0 +1,97 @@
+// If you edit this file you need to compile the theme. See README.md for details.
+
+// Global variable overrides. Must be declared before importing Valo.
+
+// Defines the plaintext font size, weight and family. Font size affects general component sizing.
+//$v-font-size: 16px;
+//$v-font-weight: 300;
+//$v-font-family: "Open Sans", sans-serif;
+
+// Defines the border used by all components.
+//$v-border: 1px solid (v-shade 0.7);
+//$v-border-radius: 4px;
+
+// Affects the color of some component elements, e.g Button, Panel title, etc
+//$v-background-color: hsl(210, 0%, 98%);
+// Affects the color of content areas, e.g  Panel and Window content, TextField input etc
+//$v-app-background-color: $v-background-color;
+
+// Affects the visual appearance of all components
+//$v-gradient: v-linear 8%;
+//$v-bevel-depth: 30%;
+//$v-shadow-opacity: 5%;
+
+// Defines colors for indicating status (focus, success, failure)
+//$v-focus-color: valo-focus-color(); // Calculates a suitable color automatically
+//$v-friendly-color: #2c9720;
+//$v-error-indicator-color: #ed473b;
+
+// For more information, see: https://vaadin.com/book/-/page/themes.valo.html
+// Example variants can be copy/pasted from https://vaadin.com/wiki/-/wiki/Main/Valo+Examples
+
+@import "../valo/valo.scss";
+
+@mixin Drumbeat {
+  @include valo;
+
+  
+  .drumbeat {
+    color: black;
+    background: #DDDDFF;
+}
+
+.drumbeat_white {
+    color: black;
+    background: #FFFFFF;
+}
+
+.v-table-row.v-table-row-bold,
+.v-table-row-odd.v-table-row-bold,
+.v-tree-node-bold {
+    font-weight: bold;
+    color: #07407F;
+}
+
+.v-table-row.v-table-row-literal,
+.v-table-row-odd.v-table-row-literal,
+.v-tree-node-literal {
+    font-weight: normal;
+    color: #ff4040;
+}
+
+.v-table-row.v-table-row-type,
+.v-table-row-odd.v-table-row-type,
+.v-tree-node-type {
+    font-weight: normal;
+    color: #ffff40;
+}
+
+.v-table-row.v-table-row-gray,
+.v-table-row-odd.v-table-row-gray,
+.v-tree-node-type {
+    font-weight: normal;
+    color: #cccccc;
+}
+
+.v-tree-node-normal {
+    font-weight: normal;
+    color: #000000;
+}
+
+.v-table-row.v-table-row-normal,
+.v-table-row-odd.v-table-row-normal {
+  background-color: #ffffff;
+}
+
+.v-table-header {
+    color: #ffffff;
+    background: #5B6392;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .backgroundimage {
+      background: url("images/drumbeat_banner_small3.jpg");  
+      background-repeat: no-repeat;   
+}
+}
