@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.mapper.MapperWrapper;
@@ -44,13 +45,19 @@ SOFTWARE.
  *
  */
 public class AnnotationsDataHandler {
-	private DrumbeatAnnotationsData data_store=null;
+	private Optional<DrumbeatAnnotationsData> data_store=Optional.empty();
 	
 	/**
 	 * @return
 	 */
 	public DrumbeatAnnotationsData getData_store() {
-		return data_store;
+		if(data_store.isPresent())
+		  return data_store.get();
+		else
+		{
+		  data_store=Optional.of(new DrumbeatAnnotationsData());
+		  return data_store.get();
+		}
 	}
 
 	/**
@@ -58,7 +65,8 @@ public class AnnotationsDataHandler {
 	 */
 	public void save_data()
 	{
-		internal_save_data(data_store);	
+		if(data_store.isPresent())
+		  internal_save_data(data_store.get());	
 	}
 	
 	/**
@@ -96,9 +104,10 @@ public class AnnotationsDataHandler {
 	 */
 	public void read_data()
 	{
-		data_store=internal_read_data();
-		if(data_store==null)
-			data_store=new DrumbeatAnnotationsData();
+		DrumbeatAnnotationsData da=internal_read_data();
+		data_store=Optional.of(da);
+		if(da==null)
+			data_store=Optional.of(new DrumbeatAnnotationsData());
 	}
 	
 	/**

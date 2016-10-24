@@ -1,5 +1,7 @@
 package fi.aalto.drumbeat.drumbeat_tree.DrumbeatTree.vo;
 
+import java.util.Optional;
+
 import org.apache.jena.rdf.model.RDFNode;
 
 import fi.aalto.drumbeat.object_browser.NameSpaceHandler;
@@ -39,13 +41,13 @@ SOFTWARE.
 public class DrumbeatNode {
 	private boolean isOWLClassNode = false;
 	private boolean isShownAlready = false;
-	
-	private RDFNode jena_node = null;
-	
-	private String owlClassType = null;
-	private String connected_name = null;
-	private DrumbeatProperty parent = null;
-	
+
+	private Optional<RDFNode> jena_node = Optional.empty();
+
+	private Optional<String> owlClassType = Optional.empty();
+	private Optional<String> connected_name = Optional.empty();
+	private DrumbeatProperty parent;
+
 	private final NameSpaceHandler name_spaces_handler;
 
 	/**
@@ -54,7 +56,7 @@ public class DrumbeatNode {
 	 */
 	public DrumbeatNode(RDFNode jena_node, NameSpaceHandler name_spaces_handler) {
 		super();
-		this.jena_node = jena_node;
+		this.jena_node = Optional.of(jena_node);
 		this.name_spaces_handler = name_spaces_handler;
 		toString(); // activate first time for table
 	}
@@ -63,10 +65,13 @@ public class DrumbeatNode {
 	 * @return
 	 */
 	public boolean containsTTL() {
-		if (!jena_node.isLiteral())
-			return jena_node.asResource().getURI().contains(".ttl");
-		else
-			return false;
+		if (jena_node.isPresent()) {
+			if (!jena_node.get().isLiteral())
+				return jena_node.get().asResource().getURI().contains(".ttl");
+			else
+				return false;
+		}
+		return false;
 	}
 
 	/**
@@ -101,22 +106,18 @@ public class DrumbeatNode {
 	 * @return
 	 */
 	public String getURI() {
-		if (!jena_node.isLiteral())
-			return jena_node.asResource().getURI();
-		else
-			return jena_node.asLiteral().getLexicalForm();
+		if (jena_node.isPresent()) {
+			if (!jena_node.get().isLiteral())
+				return jena_node.get().asResource().getURI();
+			else
+				return jena_node.get().asLiteral().getLexicalForm();
+		}
+		return "";
 	}
 
 	public boolean hasURL() {
-		return jena_node.isURIResource();
-	}
-
-	/**
-	 * @return
-	 */
-	public boolean isDrumbeatBlankNode() {
-		if (!jena_node.isLiteral())
-			return jena_node.asResource().getURI().contains("BLANK/_LINE");
+		if (jena_node.isPresent())
+			return jena_node.get().isURIResource();
 		else
 			return false;
 	}
@@ -124,26 +125,45 @@ public class DrumbeatNode {
 	/**
 	 * @return
 	 */
+	public boolean isDrumbeatBlankNode() {
+		if (jena_node.isPresent()) {
+			if (!jena_node.get().isLiteral())
+				return jena_node.get().asResource().getURI().contains("BLANK/_LINE");
+			else
+				return false;
+		}
+		return false;
+	}
+
+	/**
+	 * @return
+	 */
 	public String getType() {
-		return owlClassType;
+		if (owlClassType.isPresent())
+			return owlClassType.get();
+		else
+			return "";
 	}
 
 	/**
 	 * @param type
 	 */
 	public void setType(String type) {
-		this.owlClassType = type;
+		this.owlClassType = Optional.of(type);
 	}
 
-		public String getName() {
-		return connected_name;
+	public String getName() {
+		if (connected_name.isPresent())
+			return connected_name.get();
+		else
+			return "";
 	}
 
 	/**
 	 * @param name
 	 */
 	public void setName(String name) {
-		this.connected_name = name;
+		this.connected_name = Optional.of(name);
 	}
 
 	/**
@@ -152,9 +172,9 @@ public class DrumbeatNode {
 	private String name_title() {
 		String ret = "";
 		if (connected_name != null) {
-			ret += " '"+connected_name+"'";
+			ret += " '" + connected_name + "'";
 		}
-			return ret;
+		return ret;
 
 	}
 
@@ -173,7 +193,6 @@ public class DrumbeatNode {
 
 	}
 
-	
 	/**
 	 * @return
 	 */
@@ -193,56 +212,55 @@ public class DrumbeatNode {
 	 * @return
 	 */
 	private String getNameSpace(String uri) {
-		
-		int inx=uri.lastIndexOf("/");
-		if(inx>0)
-		{
-			if(inx!=uri.length()-1)
-			 return uri.substring(0,inx+1);
+
+		int inx = uri.lastIndexOf("/");
+		if (inx > 0) {
+			if (inx != uri.length() - 1)
+				return uri.substring(0, inx + 1);
 		}
 		return uri;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		if (jena_node.isLiteral())
-			return "'" + jena_node.asLiteral().getLexicalForm() + "'";
-		else {
-			if (name_spaces_handler.getName_spaces() != null) {
-				String uri = jena_node.asResource().getURI();
-				String ns = getNameSpace(uri);//jena_node.asResource().getNameSpace();
-				if (ns != null) {
-					String ns_abr = name_spaces_handler.getName_spaces().get(ns);
-					if (ns_abr == null) {
-						ns_abr = name_spaces_handler.name_namespace(ns);
-						name_spaces_handler.getName_spaces().put(ns, ns_abr);
-					}
-					ns = uri.replace(ns, "");
-					String type_title=type_title();
-					if (ns_abr.contains("BLANK"))
-					{
-						
-						if (type_title.length() > 0) {
+		if (jena_node.isPresent()) {
+			if (jena_node.get().isLiteral())
+				return "'" + jena_node.get().asLiteral().getLexicalForm() + "'";
+			else {
+				if (name_spaces_handler.getName_spaces() != null) {
+					String uri = jena_node.get().asResource().getURI();
+					String ns = getNameSpace(uri);// jena_node.asResource().getNameSpace();
+					if (ns != null) {
+						String ns_abr = name_spaces_handler.getName_spaces().get(ns);
+						if (ns_abr == null) {
+							ns_abr = name_spaces_handler.name_namespace(ns);
+							name_spaces_handler.getName_spaces().put(ns, ns_abr);
+						}
+						ns = uri.replace(ns, "");
+						String type_title = type_title();
+						if (ns_abr.contains("BLANK")) {
 
-							return type_title;
+							if (type_title.length() > 0) {
+
+								return type_title;
+							} else {
+								return "--->";
+							}
 						}
-						else
-						{
-							return "--->";							
-						}
-					}
-					return ns_abr + ":" +ns + type_title+name_title();
+						return ns_abr + ":" + ns + type_title + name_title();
+					} else
+						return uri + type_title() + name_title();
 				} else
-					return uri + type_title()+name_title();
-			} else
-				return jena_node.asResource().getURI() + type_title()+name_title();
+					return jena_node.get().asResource().getURI() + type_title() + name_title();
 
+			}
 		}
+		return "";
 	}
-
-
 
 }

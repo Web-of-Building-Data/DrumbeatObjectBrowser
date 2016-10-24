@@ -3,6 +3,7 @@ package fi.aalto.drumbeat.object_browser;
 import java.io.File;
 import java.net.URL;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 import javax.servlet.annotation.WebServlet;
@@ -72,14 +73,16 @@ public class DrumbeatObjectBrowser_Main extends UI {
 	private static final long serialVersionUID = 1L;
 	private String url = "http://architectural.drb.cs.hut.fi/drumbeat/collections";
 	private final Table ns_table = new Table("");
-	private BrowserFrame browser = null;
-	private RichTextArea richTextArea = null;
+	private Optional<BrowserFrame> browser = Optional.empty();
+	private Optional<RichTextArea> richTextArea = Optional.empty();
 
 	private final AnnotationsDataHandler annotation_DataModel = new AnnotationsDataHandler();
 	private DrumbeatObjectBrowserTree objectbrowser_tree;
-	private final  NameSpaceHandler name_spaces_handler=new  NameSpaceHandler();
+	private final NameSpaceHandler name_spaces_handler = new NameSpaceHandler();
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see com.vaadin.ui.UI#init(com.vaadin.server.VaadinRequest)
 	 */
 	@Override
@@ -111,7 +114,7 @@ public class DrumbeatObjectBrowser_Main extends UI {
 		rootResponsiveRow.setSizeFull();
 
 		ResponsiveColumn treeCol = rootResponsiveRow.addColumn().withDisplayRules(12, 12, 7, 7);
-		objectbrowser_tree = new DrumbeatObjectBrowserTree(app_url, url,name_spaces_handler);
+		objectbrowser_tree = new DrumbeatObjectBrowserTree(app_url, url, name_spaces_handler);
 		treeCol.withComponent(objectbrowser_tree.getLayout());
 
 		ResponsiveColumn detailsCol = rootResponsiveRow.addColumn().withDisplayRules(12, 12, 5, 5);
@@ -131,7 +134,7 @@ public class DrumbeatObjectBrowser_Main extends UI {
 		main_layout.setSpacing(true);
 		setContent(main_layout);
 		communication.register(this);
-		objectbrowser_tree.initialize();  // Timing
+		objectbrowser_tree.initialize(); // Timing
 	}
 
 	/**
@@ -171,11 +174,13 @@ public class DrumbeatObjectBrowser_Main extends UI {
 	 */
 	private ResponsiveColumn createInfoBrowserPanel(ContentArea ca, ResponsiveColumn info_co) {
 		final VerticalLayout browser_layout = new VerticalLayout();
-		this.browser = new BrowserFrame("More Information (Powered bt Google)",
-				new ExternalResource("http://www.drumbeat.fi/"));
-		browser.setWidth("600px");
-		browser.setHeight("400px");
-		browser_layout.addComponent(browser);
+		this.browser = Optional.of(new BrowserFrame("More Information (Powered bt Google)",
+				new ExternalResource("http://www.drumbeat.fi/")));
+		if (browser.isPresent()) {
+			browser.get().setWidth("600px");
+			browser.get().setHeight("400px");
+			browser_layout.addComponent(browser.get());
+		}
 		info_co.setComponent(browser_layout);
 
 		ResponsiveColumn editor_co = ca.addColumn().withDisplayRules(12, 12, 12, 12).withVisibilityRules(true, true,
@@ -188,21 +193,24 @@ public class DrumbeatObjectBrowser_Main extends UI {
 	 */
 	private void createAnnotationsPanel(ResponsiveColumn editor_co) {
 		final VerticalLayout editor_layout = new VerticalLayout();
-		this.richTextArea = new RichTextArea();
-		richTextArea.setWidth("600px");
-		richTextArea.setHeight("410px");
-		richTextArea.setCaption("Comments editor for the entity");
-		richTextArea.setValue("");
-		richTextArea.addValueChangeListener(new Property.ValueChangeListener() {
+		this.richTextArea = Optional.of(new RichTextArea());
+		if(richTextArea.isPresent())
+		{
+		richTextArea.get().setWidth("600px");
+		richTextArea.get().setHeight("410px");
+		richTextArea.get().setCaption("Comments editor for the entity");
+		richTextArea.get().setValue("");
+		richTextArea.get().addValueChangeListener(new Property.ValueChangeListener() {
 			private static final long serialVersionUID = 7673034039823701356L;
 
 			@Override
 			public void valueChange(Property.ValueChangeEvent valueChangeEvent) {
 				try {
 					if (objectbrowser_tree.getMain_node() != null) {
-						if (objectbrowser_tree.getMain_node().hasURL()) {
+						if(objectbrowser_tree.getMain_node().isPresent())
+						if (objectbrowser_tree.getMain_node().get().hasURL()) {
 							annotation_DataModel.getData_store().getUri_content()
-									.put(objectbrowser_tree.getMain_node().getURI(), richTextArea.getValue());
+									.put(objectbrowser_tree.getMain_node().get().getURI(), richTextArea.get().getValue());
 							annotation_DataModel.save_data();
 						}
 					}
@@ -212,7 +220,8 @@ public class DrumbeatObjectBrowser_Main extends UI {
 
 			}
 		});
-		editor_layout.addComponent(richTextArea);
+		editor_layout.addComponent(richTextArea.get());
+		}
 		editor_co.setComponent(editor_layout);
 	}
 
@@ -267,12 +276,13 @@ public class DrumbeatObjectBrowser_Main extends UI {
 	 * @param event
 	 */
 	@Subscribe
-	public  void updateInfoPanels(MainNodeUpdateEvent event) {
+	public void updateInfoPanels(MainNodeUpdateEvent event) {
 		if (!main_edit_set) {
 			if (event.getMain_node().hasURL() && annotation_DataModel.getData_store() != null) {
 				String data = annotation_DataModel.getData_store().getUri_content().get(event.getMain_node().getURI());
 				if (data != null) {
-					richTextArea.setValue(data);
+					if(richTextArea.isPresent())
+					  richTextArea.get().setValue(data);
 					main_edit_set = true;
 				}
 			}
@@ -283,7 +293,8 @@ public class DrumbeatObjectBrowser_Main extends UI {
 			if (type != null && type.length() > 0) {
 				if (type.startsWith("Ifc")) {
 					// TODO Check the IFC version
-					browser.setSource(new ExternalResource(
+					if(browser.isPresent())
+					   browser.get().setSource(new ExternalResource(
 							"http://www.google.com/search?ie=UTF-8&oe=UTF-8&sourceid=navclient&gfns=1&q="
 									+ type.toLowerCase()));
 					main_url_set = true;
@@ -291,7 +302,6 @@ public class DrumbeatObjectBrowser_Main extends UI {
 			}
 		}
 	}
-
 
 	@SuppressWarnings("serial")
 	@WebServlet(urlPatterns = "/*", name = "DrumbeatObjectBrowserServlet", asyncSupported = true)

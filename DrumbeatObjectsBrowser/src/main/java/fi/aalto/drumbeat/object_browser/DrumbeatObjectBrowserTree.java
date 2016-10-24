@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 
@@ -68,7 +69,7 @@ public class DrumbeatObjectBrowserTree {
 	private final String url;
 	private final TreeTable tree_presentation = new TreeTable("");
 	private final VerticalLayout layout = new VerticalLayout();
-	private DrumbeatNode main_node = null;
+	private Optional<DrumbeatNode> main_node = Optional.empty();
 
 	private final Set<String> url_set = new HashSet<String>();
 	private final Set<DrumbeatNode> list_ends = new HashSet<DrumbeatNode>();
@@ -104,10 +105,11 @@ public class DrumbeatObjectBrowserTree {
 	public VerticalLayout getLayout() {
 		return layout;
 	}
+
 	/**
 	 * @return
 	 */
-	public DrumbeatNode getMain_node() {
+	public Optional<DrumbeatNode> getMain_node() {
 		return main_node;
 	}
 
@@ -119,7 +121,7 @@ public class DrumbeatObjectBrowserTree {
 		tree_presentation.setHeight("900px");
 		List<DrumbeatNode> url_node_set = handleURL(url);
 		if (url_node_set.size() > 0)
-			main_node = url_node_set.get(0);
+			main_node = Optional.of(url_node_set.get(0));
 		fetchNewNodes(url_node_set);
 
 		tree_presentation.addExpandListener(new Tree.ExpandListener() {
@@ -354,7 +356,8 @@ public class DrumbeatObjectBrowserTree {
 			handle_next.add(d_o);
 	}
 
-	Set<DrumbeatNode> handled_nodes=new HashSet<DrumbeatNode>();
+	Set<DrumbeatNode> handled_nodes = new HashSet<DrumbeatNode>();
+
 	/**
 	 * @param node
 	 * @param list_handling
@@ -362,7 +365,7 @@ public class DrumbeatObjectBrowserTree {
 	 */
 	private List<DrumbeatNode> handleNode(DrumbeatNode node, boolean list_handling) {
 		List<DrumbeatNode> list_of_new_nodes = new ArrayList<DrumbeatNode>();
-		if(!handled_nodes.add(node) || !node.hasURL())
+		if (!handled_nodes.add(node) || !node.hasURL())
 			return list_of_new_nodes;
 		String url = node.getURI();
 
@@ -402,10 +405,13 @@ public class DrumbeatObjectBrowserTree {
 				}
 				updateTreeNode(node.getParent().getParent());
 				handleStatement(node.getParent().getParent(), node.getParent(), stmt, list_of_new_nodes);
+
 				return list_of_new_nodes;
 			} else if (object_value_properties.contains(stmt.getPredicate().getLocalName())) {
 				tree_presentation.removeItem(node);
+
 				handleStatement(node.getParent().getParent(), node.getParent(), stmt, list_of_new_nodes);
+
 				return list_of_new_nodes;
 			} else if (stmt.getPredicate().getLocalName().equals("hasNext") && !list_handling) {
 				list_begins.add(node);
@@ -414,7 +420,9 @@ public class DrumbeatObjectBrowserTree {
 				statements.add(stmt);
 		}
 
-		if (type_stmt != null) {
+		if (type_stmt != null)
+
+		{
 			node.setType(type_stmt.getObject().asResource().getLocalName());
 			updateTreeNode(node);
 			if (node.getParent() != null)
@@ -513,11 +521,10 @@ public class DrumbeatObjectBrowserTree {
 						}
 				}
 			}
-
-		if (node.getParent() != null && node.getParent().getParent() != null) {
-			DrumbeatNode p = node.getParent().getParent();
-			return recursive_fetch_parents(p, path);
-		}
+			if (node.getParent() != null && node.getParent().getParent() != null) {
+				DrumbeatNode p = node.getParent().getParent();
+				return recursive_fetch_parents(p, path);
+			}
 		return true;
 
 	}
@@ -552,10 +559,11 @@ public class DrumbeatObjectBrowserTree {
 			}
 		}
 		tree_presentation.removeItem(node);
-		if (node.getParent() != null && node.getParent().getParent() != null) {
-			DrumbeatNode p = node.getParent().getParent();
-			recursive_remove_and_set(p, node.getParent(), tuple);
-		}
+		
+			if (node.getParent() != null && node.getParent().getParent() != null) {
+				DrumbeatNode p = node.getParent().getParent();
+				recursive_remove_and_set(p, node.getParent(), tuple);
+			}
 
 	}
 
@@ -563,7 +571,8 @@ public class DrumbeatObjectBrowserTree {
 	 * 
 	 */
 	private void doUpdateCycle() {
-		communication.post(new MainNodeUpdateEvent(main_node));
+		if (main_node.isPresent())
+			communication.post(new MainNodeUpdateEvent(main_node.get()));
 		doListbegins();
 		doListEnds();
 		doFetchNexts();
@@ -595,7 +604,7 @@ public class DrumbeatObjectBrowserTree {
 				while (!path.isEmpty()) {
 					tuple += path.pop() + ",";
 				}
-				tuple = tuple.substring(0, tuple.length() - 1) + ")";
+				tuple = tuple.substring(0, tuple.length() - 1) + ")";				
 				recursive_remove_and_set(n, n.getParent(), tuple);
 			}
 		}
