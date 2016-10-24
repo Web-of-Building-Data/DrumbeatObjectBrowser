@@ -105,9 +105,10 @@ public class AnnotationsDataHandler {
 	public void read_data()
 	{
 		DrumbeatAnnotationsData da=internal_read_data();
-		data_store=Optional.of(da);
 		if(da==null)
 			data_store=Optional.of(new DrumbeatAnnotationsData());
+		else
+		    data_store=Optional.of(da);
 	}
 	
 	/**
