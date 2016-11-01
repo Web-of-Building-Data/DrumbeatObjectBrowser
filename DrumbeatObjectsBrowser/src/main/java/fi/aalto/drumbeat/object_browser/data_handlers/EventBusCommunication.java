@@ -1,4 +1,5 @@
-package fi.aalto.drumbeat.drumbeat_tree.DrumbeatTree.vo;
+package fi.aalto.drumbeat.object_browser.data_handlers;
+import com.google.common.eventbus.EventBus;
 /*
 * 
 Jyrki Oraskari, Aalto University, 2016 
@@ -32,25 +33,35 @@ SOFTWARE.
  * @author joraskur
  *
  */
-public class DrumbeatTuple {
-	private final String content;
+public class EventBusCommunication {
+	private final EventBus commucication_bus = new EventBus();
+	private static EventBusCommunication instance = null;
+	protected EventBusCommunication() {
+		commucication_bus.register(this);
+	}
 
+	/**
+	 * @return
+	 */
+	public static EventBusCommunication getInstance() {
+		if (instance == null) {
+			instance = new EventBusCommunication();
+		}
+		return instance;
+	}
+
+	/**
+	 * @param event
+	 */
+	public void post( Object  event) {
+		commucication_bus.post(event);
+	}
 	
 	/**
-	 * @param content
+	 * @param subscriber
 	 */
-	public DrumbeatTuple(String content) {
-		super();
-		this.content=content;
+	public void register(Object subscriber)
+	{
+		commucication_bus.register(subscriber);
 	}
-
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return content;
-	}
-
 }

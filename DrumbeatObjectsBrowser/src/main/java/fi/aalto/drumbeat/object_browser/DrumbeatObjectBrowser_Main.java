@@ -32,7 +32,9 @@ import com.vaadin.ui.Table;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 
-import fi.aalto.drumbeat.object_browser.events.NameSpaceDataChangedEvent;
+import fi.aalto.drumbeat.object_browser.data_handlers.AnnotationsDataHandler;
+import fi.aalto.drumbeat.object_browser.data_handlers.EventBusCommunication;
+import fi.aalto.drumbeat.object_browser.data_handlers.NameSpaceHandler;
 import fi.aalto.drumbeat.object_browser.events.MainNodeUpdateEvent;
 /*
 * 
@@ -61,6 +63,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+import fi.aalto.drumbeat.object_browser.events.NameSpaceDataChangedEvent;
 
 /**
  * @author joraskur
@@ -77,7 +80,7 @@ public class DrumbeatObjectBrowser_Main extends UI {
 	private Optional<RichTextArea> richTextArea = Optional.empty();
 
 	private final AnnotationsDataHandler annotation_DataModel = new AnnotationsDataHandler();
-	private DrumbeatObjectBrowserTree objectbrowser_tree;
+	private DrumbeatTree objectbrowser_tree;
 	private final NameSpaceHandler name_spaces_handler = new NameSpaceHandler();
 
 	/*
@@ -114,7 +117,7 @@ public class DrumbeatObjectBrowser_Main extends UI {
 		rootResponsiveRow.setSizeFull();
 
 		ResponsiveColumn treeCol = rootResponsiveRow.addColumn().withDisplayRules(12, 12, 7, 7);
-		objectbrowser_tree = new DrumbeatObjectBrowserTree(app_url, url, name_spaces_handler);
+		objectbrowser_tree = new DrumbeatTree(app_url, url, name_spaces_handler);
 		treeCol.withComponent(objectbrowser_tree.getLayout());
 
 		ResponsiveColumn detailsCol = rootResponsiveRow.addColumn().withDisplayRules(12, 12, 5, 5);
@@ -175,7 +178,7 @@ public class DrumbeatObjectBrowser_Main extends UI {
 	private ResponsiveColumn createInfoBrowserPanel(ContentArea ca, ResponsiveColumn info_co) {
 		final VerticalLayout browser_layout = new VerticalLayout();
 		this.browser = Optional.of(new BrowserFrame("More Information (Powered bt Google)",
-				new ExternalResource("http://www.drumbeat.fi/")));
+				new ExternalResource("http://www.buildingsmart-tech.org/specifications/ifc-overview")));
 		if (browser.isPresent()) {
 			browser.get().setWidth("600px");
 			browser.get().setHeight("400px");

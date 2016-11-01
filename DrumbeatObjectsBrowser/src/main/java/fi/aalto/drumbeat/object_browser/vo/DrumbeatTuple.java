@@ -1,7 +1,4 @@
-package fi.aalto.drumbeat.drumbeat_tree.DrumbeatTree.vo;
-
-import java.util.HashMap;
-import java.util.Map;
+package fi.aalto.drumbeat.object_browser.vo;
 /*
 * 
 Jyrki Oraskari, Aalto University, 2016 
@@ -32,29 +29,28 @@ SOFTWARE.
 
 
 /**
- * DrumbeatAnnotationsData
- * Do not change 
  * @author joraskur
  *
  */
-public class DrumbeatAnnotationsData {
-	private Map<String,String> uri_content=new HashMap<String,String>();
-	public DrumbeatAnnotationsData()
-	{
-		
+public class DrumbeatTuple {
+	private final String content;
+
+	
+	/**
+	 * @param content
+	 */
+	public DrumbeatTuple(String content) {
+		super();
+		this.content=content;
 	}
 
-	/**
-	 * @return
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
 	 */
-	public Map<String, String> getUri_content() {
-		return uri_content;
+	@Override
+	public String toString() {
+		return content;
 	}
 
-	/**
-	 * @param uri_content
-	 */
-	public void setUri_content(Map<String, String> uri_content) {
-		this.uri_content = uri_content;
-	}
 }

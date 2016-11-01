@@ -26,9 +26,9 @@ import com.vaadin.ui.Tree.ExpandEvent;
 import com.vaadin.ui.TreeTable;
 import com.vaadin.ui.VerticalLayout;
 
-import fi.aalto.drumbeat.drumbeat_tree.DrumbeatTree.vo.DrumbeatNode;
-import fi.aalto.drumbeat.drumbeat_tree.DrumbeatTree.vo.DrumbeatProperty;
-import fi.aalto.drumbeat.drumbeat_tree.DrumbeatTree.vo.DrumbeatTuple;
+import fi.aalto.drumbeat.object_browser.data_handlers.DrumbeatRESTDataHandler;
+import fi.aalto.drumbeat.object_browser.data_handlers.EventBusCommunication;
+import fi.aalto.drumbeat.object_browser.data_handlers.NameSpaceHandler;
 import fi.aalto.drumbeat.object_browser.events.MainNodeUpdateEvent;
 /*
 * 
@@ -58,12 +58,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 import fi.aalto.drumbeat.object_browser.events.NameSpaceDataChangedEvent;
+import fi.aalto.drumbeat.object_browser.vo.DrumbeatNode;
+import fi.aalto.drumbeat.object_browser.vo.DrumbeatProperty;
+import fi.aalto.drumbeat.object_browser.vo.DrumbeatTuple;
 
 /**
  * @author joraskur
  *
  */
-public class DrumbeatObjectBrowserTree {
+public class DrumbeatTree {
 	private final EventBusCommunication communication = EventBusCommunication.getInstance();
 	private final String app_url;
 	private final String url;
@@ -80,7 +83,7 @@ public class DrumbeatObjectBrowserTree {
 	private final List<String> objects_handled_automativally = Arrays.asList("globalId,name,description".split(","));
 	private final NameSpaceHandler name_spaces_handler;;
 
-	public DrumbeatObjectBrowserTree(String app_url, String url, NameSpaceHandler name_spaces_handler) {
+	public DrumbeatTree(String app_url, String url, NameSpaceHandler name_spaces_handler) {
 		this.app_url = app_url;
 		this.url = url;
 		this.name_spaces_handler = name_spaces_handler;
@@ -281,8 +284,8 @@ public class DrumbeatObjectBrowserTree {
 		return ret;
 	}
 
-	final Map<String, DrumbeatNode> url_node_map = new HashMap<String, DrumbeatNode>();
-	final Map<String, DrumbeatProperty> id_property_map = new HashMap<String, DrumbeatProperty>();
+	final private Map<String, DrumbeatNode> url_node_map = new HashMap<String, DrumbeatNode>();
+	final private Map<String, DrumbeatProperty> id_property_map = new HashMap<String, DrumbeatProperty>();
 
 	/**
 	 * @param nodes
@@ -356,7 +359,7 @@ public class DrumbeatObjectBrowserTree {
 			handle_next.add(d_o);
 	}
 
-	Set<DrumbeatNode> handled_nodes = new HashSet<DrumbeatNode>();
+	private Set<DrumbeatNode> handled_nodes = new HashSet<DrumbeatNode>();
 
 	/**
 	 * @param node

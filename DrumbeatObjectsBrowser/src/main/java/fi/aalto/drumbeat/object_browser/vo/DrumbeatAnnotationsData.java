@@ -1,8 +1,7 @@
-package fi.aalto.drumbeat.object_browser;
+package fi.aalto.drumbeat.object_browser.vo;
 
-import java.util.SortedMap;
-import java.util.TreeMap;
-
+import java.util.HashMap;
+import java.util.Map;
 /*
 * 
 Jyrki Oraskari, Aalto University, 2016 
@@ -33,44 +32,29 @@ SOFTWARE.
 
 
 /**
+ * DrumbeatAnnotationsData
+ * Do not change 
  * @author joraskur
  *
  */
-public class NameSpaceHandler {
-	private int ns_count = 1;
-	// URI->abreviation
-	private final SortedMap<String, String> name_spaces = new TreeMap<String, String>();
-	
-	/**
-	 * @param URI
-	 * @return
-	 */
-	public String name_namespace(String URI) {
-		String ns = "";
-		try {
-			String[] parts = URI.split("/");
-			for (String txt : parts) {
-				if (txt.length() > 0) {
-					ns = txt.replace("#", "");
-					ns = ns.replace("_", "");
-					char c = ns.charAt(0);
-					if (Character.isDigit(c))
-						ns = "ns" + ns;
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return "ns_" + ns_count++;
-		}
-		return ns;
+public class DrumbeatAnnotationsData {
+	private Map<String,String> uri_content=new HashMap<String,String>();
+	public DrumbeatAnnotationsData()
+	{
+		
 	}
 
 	/**
 	 * @return
 	 */
-	public SortedMap<String, String> getName_spaces() {
-		return name_spaces;
+	public Map<String, String> getUri_content() {
+		return uri_content;
 	}
 
-	
+	/**
+	 * @param uri_content
+	 */
+	public void setUri_content(Map<String, String> uri_content) {
+		this.uri_content = uri_content;
+	}
 }

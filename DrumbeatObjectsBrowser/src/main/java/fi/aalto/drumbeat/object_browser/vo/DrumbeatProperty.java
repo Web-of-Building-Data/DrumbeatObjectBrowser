@@ -1,4 +1,4 @@
-package fi.aalto.drumbeat.drumbeat_tree.DrumbeatTree.vo;
+package fi.aalto.drumbeat.object_browser.vo;
 
 import org.apache.jena.rdf.model.Resource;
 /*

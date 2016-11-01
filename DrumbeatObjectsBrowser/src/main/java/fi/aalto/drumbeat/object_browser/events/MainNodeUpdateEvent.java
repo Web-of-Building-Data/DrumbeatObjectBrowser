@@ -1,6 +1,6 @@
 package fi.aalto.drumbeat.object_browser.events;
 
-import fi.aalto.drumbeat.drumbeat_tree.DrumbeatTree.vo.DrumbeatNode;
+import fi.aalto.drumbeat.object_browser.vo.DrumbeatNode;
 
 /*
 * 

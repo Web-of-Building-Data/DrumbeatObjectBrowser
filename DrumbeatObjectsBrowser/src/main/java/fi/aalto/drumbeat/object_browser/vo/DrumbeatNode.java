@@ -1,10 +1,10 @@
-package fi.aalto.drumbeat.drumbeat_tree.DrumbeatTree.vo;
+package fi.aalto.drumbeat.object_browser.vo;
 
 import java.util.Optional;
 
 import org.apache.jena.rdf.model.RDFNode;
 
-import fi.aalto.drumbeat.object_browser.NameSpaceHandler;
+import fi.aalto.drumbeat.object_browser.data_handlers.NameSpaceHandler;
 
 /*
 * 

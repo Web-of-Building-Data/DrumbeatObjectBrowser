@@ -1,4 +1,4 @@
-package fi.aalto.drumbeat.object_browser;
+package fi.aalto.drumbeat.object_browser.data_handlers;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -49,15 +49,15 @@ SOFTWARE.
  *
  */
 public class DrumbeatRESTDataHandler {
-
-	final NameSpaceHandler name_spaces_handler;
+	final private NameSpaceHandler name_spaces_handler;
+	// URL->Model
+	static private final Map<String, Model> cache_for_huge_models = new HashMap<String, Model>();
+	static private long cache_born_time = 0;
+	
 	public DrumbeatRESTDataHandler(NameSpaceHandler name_spaces_handler) {
 		this.name_spaces_handler=name_spaces_handler;
 	}
 
-	// URL->Model
-	static final Map<String, Model> cache_for_huge_models = new HashMap<String, Model>();
-	static long cache_born_time = 0;
 
 	/**
 	 * @param url

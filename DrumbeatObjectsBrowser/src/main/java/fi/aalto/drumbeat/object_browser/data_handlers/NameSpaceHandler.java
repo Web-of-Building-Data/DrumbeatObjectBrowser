@@ -1,5 +1,8 @@
-package fi.aalto.drumbeat.object_browser;
-import com.google.common.eventbus.EventBus;
+package fi.aalto.drumbeat.object_browser.data_handlers;
+
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 /*
 * 
 Jyrki Oraskari, Aalto University, 2016 
@@ -33,35 +36,41 @@ SOFTWARE.
  * @author joraskur
  *
  */
-public class EventBusCommunication {
-	private final EventBus commucication_bus = new EventBus();
-	private static EventBusCommunication instance = null;
-	protected EventBusCommunication() {
-		commucication_bus.register(this);
+public class NameSpaceHandler {
+	private int ns_count = 1;
+	// URI->abreviation
+	private final SortedMap<String, String> name_spaces = new TreeMap<String, String>();
+	
+	/**
+	 * @param URI
+	 * @return
+	 */
+	public String name_namespace(String URI) {
+		String ns = "";
+		try {
+			String[] parts = URI.split("/");
+			for (String txt : parts) {
+				if (txt.length() > 0) {
+					ns = txt.replace("#", "");
+					ns = ns.replace("_", "");
+					char c = ns.charAt(0);
+					if (Character.isDigit(c))
+						ns = "ns" + ns;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "ns_" + ns_count++;
+		}
+		return ns;
 	}
 
 	/**
 	 * @return
 	 */
-	public static EventBusCommunication getInstance() {
-		if (instance == null) {
-			instance = new EventBusCommunication();
-		}
-		return instance;
+	public SortedMap<String, String> getName_spaces() {
+		return name_spaces;
 	}
 
-	/**
-	 * @param event
-	 */
-	public void post( Object  event) {
-		commucication_bus.post(event);
-	}
 	
-	/**
-	 * @param subscriber
-	 */
-	public void register(Object subscriber)
-	{
-		commucication_bus.register(subscriber);
-	}
 }
