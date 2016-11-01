@@ -171,8 +171,8 @@ public class DrumbeatNode {
 	 */
 	private String name_title() {
 		String ret = "";
-		if (connected_name != null) {
-			ret += " '" + connected_name + "'";
+		if (connected_name.isPresent()) {
+			ret += " '" + connected_name.get() + "'";
 		}
 		return ret;
 
@@ -183,8 +183,8 @@ public class DrumbeatNode {
 	 */
 	private String type_title() {
 		String ret = "";
-		if (owlClassType != null) {
-			ret += owlClassType;
+		if (owlClassType.isPresent()) {
+			ret += owlClassType.get();
 		}
 		if (ret.length() > 0) {
 			return " (" + ret + ")";
@@ -249,7 +249,7 @@ public class DrumbeatNode {
 
 								return type_title;
 							} else {
-								return "--->";
+								return ">";
 							}
 						}
 						return ns_abr + ":" + ns + type_title + name_title();

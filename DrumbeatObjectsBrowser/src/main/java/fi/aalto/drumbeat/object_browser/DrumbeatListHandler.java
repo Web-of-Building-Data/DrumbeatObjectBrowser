@@ -42,10 +42,10 @@ public class DrumbeatListHandler {
 
 	private final DrumbeatTree drumbeatTree;
 	public final TreeTable tree;
-	
+
 	public DrumbeatListHandler(DrumbeatTree drumbeatTree) {
-		this.drumbeatTree=drumbeatTree;
-		tree=drumbeatTree.getTree_presentation();
+		this.drumbeatTree = drumbeatTree;
+		tree = drumbeatTree.getTree_presentation();
 	}
 
 	public Set<DrumbeatNode> getList_begins() {
@@ -58,30 +58,29 @@ public class DrumbeatListHandler {
 	/**
 	 * handle hasNext property chains to find listEnds
 	 */
-	public void CompressLiteralList() {
+	public void compressLists() {
 		Set<DrumbeatNode> list_begins_copy = new HashSet<DrumbeatNode>();
 		list_begins_copy.addAll(list_begins); // Avoid concurrent modifications
 
-		for (DrumbeatNode n : list_begins_copy) {
-			recursively_handle_hasNext(n, 0);
+		for (DrumbeatNode list_start_node : list_begins_copy) {
+			DrumbeatNode list_end_node = recursively_find_listEnd(list_start_node, 0);
+			if (list_end_node != null) {
+				doList(list_start_node, list_end_node);
+			}
 		}
 		list_begins.clear();
-		doListEnds();
 	}
 
-
-	
 	/**
 	 * @param node
 	 * @param counter
 	 */
-	private void recursively_handle_hasNext(DrumbeatNode node, int counter) {
+	private DrumbeatNode recursively_find_listEnd(DrumbeatNode node, int counter) {
 		if (counter > 20)
-			return;
+			return null;
 		if (node.getType() != null)
 			if (node.getType().endsWith("_EmptyList")) {
-				list_ends.add(node);
-				return;
+				return node;
 			}
 		if (tree.hasChildren(node))
 			for (Object o1 : tree.getChildren(node)) {
@@ -91,47 +90,55 @@ public class DrumbeatListHandler {
 						for (Object o2 : tree.getChildren(p)) {
 							DrumbeatNode n = (DrumbeatNode) o2;
 							drumbeatTree.handleNode(n, true);
-							recursively_handle_hasNext(n, counter + 1);
+							return recursively_find_listEnd(n, counter + 1);
 						}
 				}
 			}
+		return null;
 	}
-
-
-	
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
-	private final Set<DrumbeatNode> list_ends = new HashSet<DrumbeatNode>();
 
 	/**
 	 * handle listEnds
 	 */
-	private void doListEnds(){
-		Set<DrumbeatNode> list_ends_copy = new HashSet<DrumbeatNode>();
-		list_ends_copy.addAll(list_ends);
-		for (DrumbeatNode n : list_ends_copy) {
-			Stack<String> path = new Stack<String>();
-			if (recursive_fetch_parents(n, path)) {
-				String tuple = "(";
-				while (!path.isEmpty()) {
-					tuple += path.pop() + ",";
-				}
-				tuple = tuple.substring(0, tuple.length() - 1) + ")";				
-				recursive_remove_and_set(n, n.getParent(), tuple);
+	private void doList(DrumbeatNode list_start_node, DrumbeatNode list_end_node) {
+
+		Stack<String> literal_nodes_stack = new Stack<String>();
+		recursively_get_literals(list_end_node, literal_nodes_stack);
+		if (!literal_nodes_stack.isEmpty()) {
+			String tuple = "(";
+			while (!literal_nodes_stack.isEmpty()) {
+				tuple += literal_nodes_stack.pop() + ",";
 			}
+			tuple = tuple.substring(0, tuple.length() - 1) + ")"; // removes
+																	// last
+																	// comma
+			recursively_remove(list_end_node, list_end_node.getParent(), tuple);
+
+			DrumbeatTuple dt = new DrumbeatTuple(tuple);
+			drumbeatTree.addTreeStringNode(dt);
+
+			if (list_start_node.getParent().getParent().isDrumbeatBlankNode())
+			{
+				tree.removeItem(list_start_node.getParent());
+				tree.removeItem(list_start_node.getParent().getParent());
+				tree.setParent(dt, list_start_node.getParent().getParent().getParent());
+			}
+			else
+				tree.setParent(dt, list_start_node.getParent());
+			tree.setChildrenAllowed(dt, false);
+
 		}
-		list_ends.clear();
+
 	}
-	
-	
-	
+
 	/**
 	 * @param node
-	 * @param path
+	 * @param literal_stack
 	 * @return
 	 */
-	private boolean recursive_fetch_parents(DrumbeatNode node, Stack<String> path) {
+	private void recursively_get_literals(DrumbeatNode node, Stack<String> literal_stack) {
 		if (!node.getType().endsWith("List"))
-			return true;
+			return;
 
 		if (tree.hasChildren(node))
 			for (Object o1 : tree.getChildren(node)) {
@@ -140,41 +147,35 @@ public class DrumbeatListHandler {
 					if (tree.hasChildren(p))
 						for (Object o2 : tree.getChildren(p)) {
 							DrumbeatNode n = (DrumbeatNode) o2;
-							drumbeatTree.handleNode(n, true);
+							drumbeatTree.handleNode(n, true); // fetch from the
+																// net
 						}
+
 					if (tree.hasChildren(p))
 						for (Object o2 : tree.getChildren(p)) {
 							DrumbeatNode n = (DrumbeatNode) o2;
 							if (!n.hasURL())
-								path.push(n.toString());
-							else
-								return false;
+								literal_stack.push(n.toString());
 						}
 				}
 			}
-			if (node.getParent() != null && node.getParent().getParent() != null) {
-				DrumbeatNode p = node.getParent().getParent();
-				return recursive_fetch_parents(p, path);
-			}
-		return true;
 
+		if (node.getParent() != null && node.getParent().getParent() != null) {
+			DrumbeatNode p = node.getParent().getParent();
+			recursively_get_literals(p, literal_stack);
+		}
 	}
-	
 
 	/**
 	 * @param node
-	 * @param lastproperty
+	 * @param parent_property
 	 * @param tuple
 	 */
-	private void recursive_remove_and_set(DrumbeatNode node, DrumbeatProperty lastproperty, String tuple) {
-		if (!node.getType().endsWith("List")) {
-			DrumbeatTuple dt = new DrumbeatTuple(tuple);
-			drumbeatTree.addTreeStringNode(dt);
-			tree.setParent(dt, lastproperty);
-			tree.setChildrenAllowed(dt, false);
+	private void recursively_remove(DrumbeatNode node, DrumbeatProperty parent_property, final String tuple) {
+		if (!node.getType().endsWith("List"))
 			return;
-		}
 
+		// Removal of the nodes
 		if (tree.hasChildren(node)) {
 			Set<Object> children = new HashSet<Object>();
 			children.addAll(tree.getChildren(node));
@@ -191,18 +192,15 @@ public class DrumbeatListHandler {
 			}
 		}
 		tree.removeItem(node);
-		
-			if (node.getParent() != null && node.getParent().getParent() != null) {
-				DrumbeatNode p = node.getParent().getParent();
-				recursive_remove_and_set(p, node.getParent(), tuple);
-			}
+
+		if (node.getParent() != null && node.getParent().getParent() != null) {
+			DrumbeatNode parent_node = node.getParent().getParent();
+			DrumbeatProperty property = node.getParent();
+			recursively_remove(parent_node, property, tuple);
+		}
 
 	}
 
-
-	
-	
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 }

@@ -256,7 +256,10 @@ public class DrumbeatTree {
 	 */
 	private HorizontalLayout createTreeNodeLayout(DrumbeatNode node) {
 		HorizontalLayout layout = new HorizontalLayout();
-		if (node.hasURL()) {
+		if (node.hasURL() && node.toString().length()>3) {
+			Label label = new Label("   ");
+			layout.addComponent(label);
+
 			Link link = new Link(node.toString(), new ExternalResource(app_url + "?url=" + node.getURI()));
 			layout.addComponent(link);
 		} else {
@@ -500,7 +503,7 @@ public class DrumbeatTree {
 	private void doUpdateCycle() {
 		if (main_node.isPresent())
 			communication.post(new MainNodeUpdateEvent(main_node.get()));
-		list_handler.CompressLiteralList();
+		list_handler.compressLists();
 		doNodeTasklist();
 	}
 
