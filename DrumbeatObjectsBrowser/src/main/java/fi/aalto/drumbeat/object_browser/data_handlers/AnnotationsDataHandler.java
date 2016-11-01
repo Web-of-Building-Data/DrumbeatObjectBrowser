@@ -94,7 +94,7 @@ public class AnnotationsDataHandler {
 			    protected MapperWrapper wrapMapper(MapperWrapper next) {
 			        return new MapperWrapper(next) {
 			            @Override
-			            public boolean shouldSerializeMember(Class definedIn, String fieldName) {
+			            public boolean shouldSerializeMember(@SuppressWarnings("rawtypes") Class definedIn, String fieldName) {
 			                if (definedIn == Object.class) {
 			                    return false;
 			                }

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Stack;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFNode;
@@ -30,6 +29,12 @@ import fi.aalto.drumbeat.object_browser.data_handlers.DrumbeatRESTDataHandler;
 import fi.aalto.drumbeat.object_browser.data_handlers.EventBusCommunication;
 import fi.aalto.drumbeat.object_browser.data_handlers.NameSpaceHandler;
 import fi.aalto.drumbeat.object_browser.events.MainNodeUpdateEvent;
+import fi.aalto.drumbeat.object_browser.events.NameSpaceDataChangedEvent;
+import fi.aalto.drumbeat.object_browser.vo.DrumbeatNode;
+import fi.aalto.drumbeat.object_browser.vo.DrumbeatProperty;
+import fi.aalto.drumbeat.object_browser.vo.DrumbeatTuple;
+
+
 /*
 * 
 Jyrki Oraskari, Aalto University, 2016 
@@ -57,10 +62,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-import fi.aalto.drumbeat.object_browser.events.NameSpaceDataChangedEvent;
-import fi.aalto.drumbeat.object_browser.vo.DrumbeatNode;
-import fi.aalto.drumbeat.object_browser.vo.DrumbeatProperty;
-import fi.aalto.drumbeat.object_browser.vo.DrumbeatTuple;
 
 /**
  * @author joraskur
@@ -70,18 +71,19 @@ public class DrumbeatTree {
 	private final EventBusCommunication communication = EventBusCommunication.getInstance();
 	private final String app_url;
 	private final String url;
-	private final TreeTable tree_presentation = new TreeTable("");
+	private final TreeTable tree = new TreeTable("");
 	private final VerticalLayout layout = new VerticalLayout();
 	private Optional<DrumbeatNode> main_node = Optional.empty();
 
 	private final Set<String> url_set = new HashSet<String>();
-	private final Set<DrumbeatNode> list_ends = new HashSet<DrumbeatNode>();
-	private final Set<DrumbeatNode> list_begins = new HashSet<DrumbeatNode>();
-	private final Set<DrumbeatNode> handle_next = new HashSet<DrumbeatNode>();
+	
+	private final Set<DrumbeatNode> node_tasklist = new HashSet<DrumbeatNode>();
 
 	private final List<String> object_value_properties = Arrays.asList("hasDateTime,hasReal,hasInteger".split(","));
 	private final List<String> objects_handled_automativally = Arrays.asList("globalId,name,description".split(","));
-	private final NameSpaceHandler name_spaces_handler;;
+	private final NameSpaceHandler name_spaces_handler;
+	
+	private final DrumbeatListHandler list_handler=new DrumbeatListHandler(this);
 
 	public DrumbeatTree(String app_url, String url, NameSpaceHandler name_spaces_handler) {
 		this.app_url = app_url;
@@ -90,15 +92,21 @@ public class DrumbeatTree {
 		communication.register(this);
 	}
 
+	public TreeTable getTree_presentation() {
+		return tree;
+	}
+
+
+
 	/**
 	 * 
 	 */
 	public void initialize() {
 		// propertyID: "Object Browser" referenced in the code!
-		tree_presentation.addContainerProperty("Object Browser", HorizontalLayout.class, "");
-		tree_presentation.setWidth("100%");
+		tree.addContainerProperty("Object Browser", HorizontalLayout.class, "");
+		tree.setWidth("100%");
 		layout.setStyleName("drumbeat_white");
-		layout.addComponent(tree_presentation);
+		layout.addComponent(tree);
 		createObjectBrowserTree(url);
 	}
 
@@ -120,14 +128,14 @@ public class DrumbeatTree {
 	 * @param url
 	 */
 	private void createObjectBrowserTree(String url) {
-		tree_presentation.clear();
-		tree_presentation.setHeight("900px");
+		tree.clear();
+		tree.setHeight("900px");
 		List<DrumbeatNode> url_node_set = handleURL(url);
 		if (url_node_set.size() > 0)
 			main_node = Optional.of(url_node_set.get(0));
 		fetchNewNodes(url_node_set);
 
-		tree_presentation.addExpandListener(new Tree.ExpandListener() {
+		tree.addExpandListener(new Tree.ExpandListener() {
 			private static final long serialVersionUID = 278278278;
 
 			public void nodeExpand(ExpandEvent event) {
@@ -136,10 +144,10 @@ public class DrumbeatTree {
 					if (!node.isRepetition()) {
 						handleNode(node, false);
 
-						if (tree_presentation.hasChildren(node))
-							for (Object o : tree_presentation.getChildren(node))
-								if (tree_presentation.getChildren(o).size() < 7)
-									tree_presentation.setCollapsed(o, false);
+						if (tree.hasChildren(node))
+							for (Object o : tree.getChildren(node))
+								if (tree.getChildren(o).size() < 7)
+									tree.setCollapsed(o, false);
 
 					}
 				}
@@ -147,7 +155,7 @@ public class DrumbeatTree {
 
 		});
 
-		tree_presentation.setCellStyleGenerator(new Table.CellStyleGenerator() {
+		tree.setCellStyleGenerator(new Table.CellStyleGenerator() {
 
 			private static final long serialVersionUID = 1L;
 
@@ -212,17 +220,17 @@ public class DrumbeatTree {
 		HorizontalLayout layout = new HorizontalLayout();
 		Label label = new Label(property.toString());
 		layout.addComponent(label);
-		tree_presentation.addItem(new Object[] { layout }, property);
+		tree.addItem(new Object[] { layout }, property);
 	}
 
 	/**
 	 * @param dt
 	 */
-	private void addTreeStringNode(DrumbeatTuple dt) {
+	public void addTreeStringNode(DrumbeatTuple dt) {
 		HorizontalLayout layout = new HorizontalLayout();
 		Label label = new Label(dt.toString());
 		layout.addComponent(label);
-		tree_presentation.addItem(new Object[] { layout }, dt);
+		tree.addItem(new Object[] { layout }, dt);
 	}
 
 	/**
@@ -230,7 +238,7 @@ public class DrumbeatTree {
 	 */
 	private void addTreeNode(DrumbeatNode node) {
 		HorizontalLayout layout = createTreeNodeLayout(node);
-		tree_presentation.addItem(new Object[] { layout }, node);
+		tree.addItem(new Object[] { layout }, node);
 	}
 
 	/**
@@ -239,7 +247,7 @@ public class DrumbeatTree {
 	@SuppressWarnings("unchecked")
 	private void updateTreeNode(DrumbeatNode node) {
 		HorizontalLayout layout = createTreeNodeLayout(node);
-		tree_presentation.getContainerProperty(node, "Object Browser").setValue(layout);
+		tree.getContainerProperty(node, "Object Browser").setValue(layout);
 	}
 
 	/**
@@ -274,12 +282,12 @@ public class DrumbeatTree {
 
 		addTreeNode(d_o);
 		if (!d_o.hasURL())
-			tree_presentation.setChildrenAllowed(d_o, false);
+			tree.setChildrenAllowed(d_o, false);
 
 		if (d_o.hasURL())
 			if (!url_set.add(d_o.getURI()))
 				d_o.setRepetition(true);
-		tree_presentation.setParent(d_o, d_p);
+		tree.setParent(d_o, d_p);
 		d_o.setParent(d_p);
 		return ret;
 	}
@@ -295,11 +303,11 @@ public class DrumbeatTree {
 		List<DrumbeatNode> new_nodes = new ArrayList<DrumbeatNode>();
 		for (DrumbeatNode node : nodes) {
 			new_nodes.addAll(handleNode(node, false));
-			tree_presentation.setCollapsed(node, false);
-			if (tree_presentation.hasChildren(node))
-				for (Object o : tree_presentation.getChildren(node))
-					if (tree_presentation.getChildren(o).size() < 7)
-						tree_presentation.setCollapsed(o, false);
+			tree.setCollapsed(node, false);
+			if (tree.hasChildren(node))
+				for (Object o : tree.getChildren(node))
+					if (tree.getChildren(o).size() < 7)
+						tree.setCollapsed(o, false);
 		}
 		return new_nodes;
 	}
@@ -326,19 +334,19 @@ public class DrumbeatTree {
 			id_property_map.put(property_id, d_p);
 			addTreePropertyNode(d_p);
 
-			tree_presentation.setParent(d_p, node);
+			tree.setParent(d_p, node);
 		}
 		if (!d_o.hasURL())
-			tree_presentation.setChildrenAllowed(d_o, false);
+			tree.setChildrenAllowed(d_o, false);
 
 		if (property.getLocalName().equals("type"))
-			tree_presentation.setChildrenAllowed(d_o, false);
+			tree.setChildrenAllowed(d_o, false);
 		else {
 			if (d_o.hasURL())
 				if (!url_set.add(d_o.getURI()))
 					d_o.setRepetition(true);
 		}
-		tree_presentation.setParent(d_o, d_p);
+		tree.setParent(d_o, d_p);
 		d_o.setParent(d_p);
 
 		updateNextOpenings(d_o, d_p);
@@ -351,12 +359,12 @@ public class DrumbeatTree {
 	 */
 	private void updateNextOpenings(DrumbeatNode d_o, DrumbeatProperty d_p) {
 		if (objects_handled_automativally.contains(d_p.toString()))
-			handle_next.add(d_o);
+			node_tasklist.add(d_o);
 
 		if (d_p.toString().endsWith("Type"))
-			handle_next.add(d_o);
+			node_tasklist.add(d_o);
 		if (d_p.toString().endsWith("Identifier"))
-			handle_next.add(d_o);
+			node_tasklist.add(d_o);
 	}
 
 	private Set<DrumbeatNode> handled_nodes = new HashSet<DrumbeatNode>();
@@ -366,7 +374,7 @@ public class DrumbeatTree {
 	 * @param list_handling
 	 * @return
 	 */
-	private List<DrumbeatNode> handleNode(DrumbeatNode node, boolean list_handling) {
+	public List<DrumbeatNode> handleNode(DrumbeatNode node, boolean list_handling) {
 		List<DrumbeatNode> list_of_new_nodes = new ArrayList<DrumbeatNode>();
 		if (!handled_nodes.add(node) || !node.hasURL())
 			return list_of_new_nodes;
@@ -379,7 +387,7 @@ public class DrumbeatTree {
 
 		if (model == null) {
 			// OWL-references do not have any leaves
-			tree_presentation.setChildrenAllowed(node, false);
+			tree.setChildrenAllowed(node, false);
 			return list_of_new_nodes;
 		}
 
@@ -397,7 +405,7 @@ public class DrumbeatTree {
 			else if (stmt.getPredicate().getLocalName().contains("ownerHistory"))
 				;
 			else if (stmt.getPredicate().getLocalName().equals("hasString")) {
-				tree_presentation.removeItem(node);
+				tree.removeItem(node);
 				try {
 					if (node.getParent().toString().equals("name")) {
 						String name = stmt.getObject().asLiteral().getLexicalForm();
@@ -411,13 +419,13 @@ public class DrumbeatTree {
 
 				return list_of_new_nodes;
 			} else if (object_value_properties.contains(stmt.getPredicate().getLocalName())) {
-				tree_presentation.removeItem(node);
+				tree.removeItem(node);
 
 				handleStatement(node.getParent().getParent(), node.getParent(), stmt, list_of_new_nodes);
 
 				return list_of_new_nodes;
 			} else if (stmt.getPredicate().getLocalName().equals("hasNext") && !list_handling) {
-				list_begins.add(node);
+				list_handler.getList_begins().add(node);
 				statements.add(stmt);
 			} else
 				statements.add(stmt);
@@ -429,8 +437,8 @@ public class DrumbeatTree {
 			node.setType(type_stmt.getObject().asResource().getLocalName());
 			updateTreeNode(node);
 			if (node.getParent() != null)
-				tree_presentation.setParent(node, node.getParent());
-			tree_presentation.setCollapsed(node, false);
+				tree.setParent(node, node.getParent());
+			tree.setCollapsed(node, false);
 		}
 
 		for (Statement stmt : statements) {
@@ -470,104 +478,20 @@ public class DrumbeatTree {
 		}
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	
 	/**
-	 * @param node
-	 * @param counter
+	 * 
 	 */
-	private void recursively_handle_hasNext(DrumbeatNode node, int counter) {
-		if (counter > 20)
-			return;
-		if (node.getType() != null)
-			if (node.getType().endsWith("_EmptyList")) {
-				list_ends.add(node);
-				return;
-			}
-		if (tree_presentation.hasChildren(node))
-			for (Object o1 : tree_presentation.getChildren(node)) {
-				DrumbeatProperty p = (DrumbeatProperty) o1;
-				if (p.toString().endsWith("hasNext")) {
-					if (tree_presentation.hasChildren(p))
-						for (Object o2 : tree_presentation.getChildren(p)) {
-							DrumbeatNode n = (DrumbeatNode) o2;
-							handleNode(n, true);
-							recursively_handle_hasNext(n, counter + 1);
-						}
-				}
-			}
-	}
+	private void doNodeTasklist() {
+		Set<DrumbeatNode> handle_next_copy = new HashSet<DrumbeatNode>();
+		handle_next_copy.addAll(node_tasklist); // Avoid concurrent modifications
 
-	/**
-	 * @param node
-	 * @param path
-	 * @return
-	 */
-	private boolean recursive_fetch_parents(DrumbeatNode node, Stack<String> path) {
-		if (!node.getType().endsWith("List"))
-			return true;
-
-		if (tree_presentation.hasChildren(node))
-			for (Object o1 : tree_presentation.getChildren(node)) {
-				DrumbeatProperty p = (DrumbeatProperty) o1;
-				if (p.toString().endsWith("hasValue")) {
-					if (tree_presentation.hasChildren(p))
-						for (Object o2 : tree_presentation.getChildren(p)) {
-							DrumbeatNode n = (DrumbeatNode) o2;
-							handleNode(n, true);
-						}
-					if (tree_presentation.hasChildren(p))
-						for (Object o2 : tree_presentation.getChildren(p)) {
-							DrumbeatNode n = (DrumbeatNode) o2;
-							if (!n.hasURL())
-								path.push(n.toString());
-							else
-								return false;
-						}
-				}
-			}
-			if (node.getParent() != null && node.getParent().getParent() != null) {
-				DrumbeatNode p = node.getParent().getParent();
-				return recursive_fetch_parents(p, path);
-			}
-		return true;
-
-	}
-
-	/**
-	 * @param node
-	 * @param lastproperty
-	 * @param tuple
-	 */
-	private void recursive_remove_and_set(DrumbeatNode node, DrumbeatProperty lastproperty, String tuple) {
-		if (!node.getType().endsWith("List")) {
-			DrumbeatTuple dt = new DrumbeatTuple(tuple);
-			addTreeStringNode(dt);
-			tree_presentation.setParent(dt, lastproperty);
-			tree_presentation.setChildrenAllowed(dt, false);
-			return;
+		for (DrumbeatNode n : handle_next_copy) {
+			handleNode(n, false);
 		}
-
-		if (tree_presentation.hasChildren(node)) {
-			Set<Object> children = new HashSet<Object>();
-			children.addAll(tree_presentation.getChildren(node));
-			for (Object o1 : children) {
-				DrumbeatProperty p = (DrumbeatProperty) o1;
-				if (p.toString().endsWith("hasValue")) {
-					if (tree_presentation.hasChildren(p))
-						for (Object o2 : tree_presentation.getChildren(p)) {
-							DrumbeatNode n = (DrumbeatNode) o2;
-							tree_presentation.removeItem(n);
-						}
-				}
-				tree_presentation.removeItem(p);
-			}
-		}
-		tree_presentation.removeItem(node);
-		
-			if (node.getParent() != null && node.getParent().getParent() != null) {
-				DrumbeatNode p = node.getParent().getParent();
-				recursive_remove_and_set(p, node.getParent(), tuple);
-			}
-
+		node_tasklist.clear();
 	}
 
 	/**
@@ -576,55 +500,8 @@ public class DrumbeatTree {
 	private void doUpdateCycle() {
 		if (main_node.isPresent())
 			communication.post(new MainNodeUpdateEvent(main_node.get()));
-		doListbegins();
-		doListEnds();
-		doFetchNexts();
-	}
-
-	/**
-	 * handle hasNext property chains to find listEnds
-	 */
-	private void doListbegins() {
-		Set<DrumbeatNode> list_begins_copy = new HashSet<DrumbeatNode>();
-		list_begins_copy.addAll(list_begins); // Avoid concurrent modifications
-
-		for (DrumbeatNode n : list_begins_copy) {
-			recursively_handle_hasNext(n, 0);
-		}
-		list_begins.clear();
-	}
-
-	/**
-	 * handle listEnds
-	 */
-	private void doListEnds() {
-		Set<DrumbeatNode> list_ends_copy = new HashSet<DrumbeatNode>();
-		list_ends_copy.addAll(list_ends);
-		for (DrumbeatNode n : list_ends_copy) {
-			Stack<String> path = new Stack<String>();
-			if (recursive_fetch_parents(n, path)) {
-				String tuple = "(";
-				while (!path.isEmpty()) {
-					tuple += path.pop() + ",";
-				}
-				tuple = tuple.substring(0, tuple.length() - 1) + ")";				
-				recursive_remove_and_set(n, n.getParent(), tuple);
-			}
-		}
-		list_ends.clear();
-	}
-
-	/**
-	 * 
-	 */
-	private void doFetchNexts() {
-		Set<DrumbeatNode> handle_next_copy = new HashSet<DrumbeatNode>();
-		handle_next_copy.addAll(handle_next); // Avoid concurrent modifications
-
-		for (DrumbeatNode n : handle_next_copy) {
-			handleNode(n, false);
-		}
-		handle_next.clear();
+		list_handler.CompressLiteralList();
+		doNodeTasklist();
 	}
 
 }
